@@ -1,0 +1,9 @@
+.vscode
+*.o
+**/bin
+**/asm
+**/*.dump
+**/*.prv
+**/*.pcf
+**/*.row
+**/out

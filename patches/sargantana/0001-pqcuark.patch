@@ -1,0 +1,850 @@
+--- a/filelist.f
++++ b/filelist.f
+@@ -1,5 +1,6 @@
+ +incdir+./includes
+ +incdir+./rtl
+++incdir+./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-keccak/includes
+ ./rtl/common_cells/include/common_cells/registers.svh
+ ./rtl/common_cells/include/common_cells/assertions.svh
+ ./rtl/common_cells/src/cf_math_pkg.sv
+@@ -51,6 +52,8 @@
+ ./rtl/datapath/rtl/exe_stage/rtl/alu/zero_counter/alu_count_zeros_NLC.sv
+ ./rtl/datapath/rtl/exe_stage/rtl/alu/zero_counter/alu_count_zeros_LZC32.sv
+ ./rtl/datapath/rtl/exe_stage/rtl/alu/alu_count_pop.sv
++./rtl/datapath/rtl/exe_stage/rtl/alu/alu_crypto.sv
++./rtl/datapath/rtl/exe_stage/rtl/alu/alu_xperm.sv
+ ./rtl/datapath/rtl/exe_stage/rtl/exe_stage.sv
+ ./rtl/datapath/rtl/exe_stage/rtl/branch_unit.sv
+ ./rtl/datapath/rtl/exe_stage/rtl/simd/functional_unit.sv
+@@ -77,6 +80,25 @@
+ ./rtl/datapath/rtl/exe_stage/rtl/div_4bits.sv
+ ./rtl/datapath/rtl/exe_stage/rtl/store_buffer.sv
+ ./rtl/datapath/rtl/exe_stage/rtl/vagu.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/includes/pqcuark-common/pipe_queue.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/add_sub_32bit.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/barrett_reduction/barrett_reduce.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/barrett_reduction/bfu_barrett.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/mont_reduction/montgomery_dilithium.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/mont_reduction/montgomery_kyber.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/mont_reduction/bfu_modred.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/multiplier/multiplier.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/multiplier/bfu_multiplier.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/twiddle_factor_rom/zetas_rom.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-ntt/rtl/bfu_top.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-keccak/includes/keccak_globals.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-keccak/rtl/keccak_round_constants_gen.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-keccak/rtl/keccak_round_constants_gen_simplified.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-keccak/rtl/keccak_round.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-keccak/rtl/keccak_buffer.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/rtl/pqcuark-keccak/rtl/keccak.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/interface/iface_pqcuark_sargantana_bfu.sv
++./rtl/datapath/rtl/exe_stage/rtl/pqcuark/interface/iface_pqcuark_sargantana_keccak.sv
+ ./rtl/datapath/rtl/if_stage_1/rtl/bimodal_predictor.sv
+ ./rtl/datapath/rtl/if_stage_1/rtl/return_address_stack.sv
+ ./rtl/datapath/rtl/if_stage_1/rtl/branch_predictor.sv
+diff --git a/includes/drac_pkg.sv b/includes/drac_pkg.sv
+index 838e313..8556507 100644
+--- a/includes/drac_pkg.sv
++++ b/includes/drac_pkg.sv
+@@ -310,7 +310,9 @@ typedef enum logic [3:0]{
+     UNIT_SIMD,                  // Select SIMD
+     UNIT_FPU,                   // Select FPU
+     UNIT_CONTROL,               // Select CONTROL
+-    UNIT_SYSTEM                // Select CSR
++    UNIT_SYSTEM,                // Select CSR
++    UNIT_PQC_NTT,               // Select PQCUARK-NTT UNIT
++    UNIT_PQC_KECCAK             // Select PQCUARK-Keccak UNIT
+ } functional_unit_t;   // Selection of funtional unit in exe stage 
+ 
+ typedef enum logic [1:0]{
+@@ -392,7 +394,13 @@ typedef enum logic [8:0] {
+    // Zbb bit-manip
+    XNOR_INST, ORN, ANDN, ROL, ROR, ROLW, RORW, ZEXTH, SEXTB, SEXTH, MIN, MINU, MAX, MAXU, REV8, ORCB, CLZ, CLZW, CTZ, CTZW, CPOP, CPOPW,
+    // Zbs bit-manip
+-   BCLR, BEXT, BINV, BSET
++   BCLR, BEXT, BINV, BSET,
++   // Zbkb bit-manip
++   PACK, PACKH,
++   // Zbkx bit-manip
++   XPERM8,
++	 // PQCUARK instructions
++   PQC_BF_NTT_KEM, PQC_BF_INTT_KEM, PQC_BF_NTT_DSA, PQC_BF_INTT_DSA, PQC_BF_FQMUL16_L, PQC_BF_FQMUL32_L, PQC_BF_FQMUL16_H, PQC_BF_FQMUL32_H, PQC_KECCAK_F1600, PQC_KECCAK_LD, PQC_KECCAK_ST, PQC_KECCAK_INIT
+ } instr_type_t;
+ 
+ typedef enum logic[CSR_CMD_SIZE-1:0] {
+diff --git a/includes/riscv_pkg.sv b/includes/riscv_pkg.sv
+index 86a4421..6b2975c 100644
+--- a/includes/riscv_pkg.sv
++++ b/includes/riscv_pkg.sv
+@@ -187,7 +187,8 @@ typedef enum logic [6:0] {
+     OP_FMADD     = 7'b1000011,
+     OP_FMSUB     = 7'b1000111,
+     OP_FNMSUB    = 7'b1001011,
+-    OP_FNMADD    = 7'b1001111
++    OP_FNMADD    = 7'b1001111,
++    OP_CUSTOM2   = 7'b1011011
+ } op_inst_t;
+ 
+ typedef enum logic [2:0] {
+@@ -307,6 +308,24 @@ typedef enum logic [2:0] {
+     F3_OPCFG = 3'b111
+ } op_func3_vector_t;
+ 
++typedef enum logic [2:0] {
++    F3_PQC_BF_NTT_KEM    = 3'b000,
++    F3_PQC_BF_INTT_KEM   = 3'b001,
++    F3_PQC_BF_NTT_DSA    = 3'b010,
++    F3_PQC_BF_INTT_DSA   = 3'b011,
++    F3_PQC_BF_FQMUL16_L  = 3'b100,
++    F3_PQC_BF_FQMUL32_L  = 3'b101,
++    F3_PQC_BF_FQMUL16_H  = 3'b110,
++    F3_PQC_BF_FQMUL32_H  = 3'b111
++} op_func3_custom2_PQCUARK_NTT_t;
++
++typedef enum logic [2:0] {
++    F3_PQC_KECCAK_INIT      = 3'b000,
++    F3_PQC_KECCAK_LD        = 3'b001,
++    F3_PQC_KECCAK_F1600    = 3'b010,
++    F3_PQC_KECCAK_ST        = 3'b011
++} op_func3_custom2_PQCUARK_KECCAK_t;
++
+ typedef enum logic [5:0] {
+     F6_VADD         = 6'b000000,
+     F6_VSUB         = 6'b000010,
+@@ -507,6 +526,7 @@ typedef enum logic [4:0] {
+ typedef enum logic [6:0] {
+     F7_SRAI_SUB_SRA_NLOG         = 7'b0100000,
+     F7_NORMAL                    = 7'b0000000,
++    F7_PACK                      = 7'b0000100,
+     F7_CLMUL_MIN_MAX             = 7'b0000101,
+     F7_SHADD                     = 7'b0010000,
+     F7_BSET_ORCB                 = 7'b0010100,
+@@ -524,6 +544,11 @@ typedef enum logic [6:0] {
+     F7_64_ROLW_RORW_CLZW_CTZW_CPOPW = 7'b0110000
+ } op_func7_alu_64_t; // OP_ALU_W & OP_ALU_I_W
+ 
++typedef enum logic [6:0] {
++    F7_PQCUARK_NTT   = 7'b0000000,
++    F7_PQCUARK_KECCAK   = 7'b0000001
++} op_func7_pqcuark_t; // OP_CUSTOM2
++
+ typedef enum logic [4:0] {
+     RS2_CLZ    = 5'b00000,
+     RS2_CTZ    = 5'b00001,
+@@ -557,6 +582,11 @@ typedef enum logic [2:0] {
+     F3_ANDN = 3'b111
+ } op_func3_alu_sub_sra_neglog_t;
+ 
++typedef enum logic [2:0] {
++    F3_PACK  = 3'b100,
++    F3_PACKH = 3'b111
++} op_func3_pack_t;
++
+ typedef enum logic [2:0] { 
+     F3_SH1ADD = 3'b010,
+     F3_SH2ADD = 3'b100,
+@@ -564,7 +594,8 @@ typedef enum logic [2:0] {
+ } op_func3_alu_shadd_t;
+ 
+ typedef enum logic [2:0] {
+-    F3_BSET = 3'b001
++    F3_BSET = 3'b001,
++    F3_XPERM8 = 3'b100 
+ } op_func3_alu_bset_t;
+ 
+ typedef enum logic [2:0] {
+@@ -1089,8 +1120,13 @@ typedef enum logic [11:0] {
+ 
+     CSR_HYPERRAM_CONFIG = 12'h7F0,  // HyperRAM Configuration CSR
+     CSR_CNM_CONFIG = 12'h7F1, 	// CNM Peripherals Configuration CSR 
+-    CSR_SPI_CONFIG = 12'h7F2  // SPI Configuration CSR
+-    
++    CSR_SPI_CONFIG = 12'h7F2,  // SPI Configuration CSR
++
++
++    // KECCAK
++    CSR_KECCAK_INLEN    = 12'h816,
++    CSR_KECCAK_FSEL     = 12'h817
++
+ } csr_reg_t;
+ 
+ localparam logic [63:0] SSTATUS_UIE    = 64'h00000001;
+diff --git a/rtl/csr b/rtl/csr
+index e585fb5..80df670 160000
+--- a/rtl/csr
++++ b/rtl/csr
+@@ -1 +1 @@
+-Subproject commit e585fb55a43d8c7f60f09b2bde2e614ef3911de4
++Subproject commit 80df6704a44bb2d5882cf86dcbabf55019034816
+diff --git a/rtl/datapath/rtl/datapath.sv b/rtl/datapath/rtl/datapath.sv
+index 1c453bc..475aa91 100644
+--- a/rtl/datapath/rtl/datapath.sv
++++ b/rtl/datapath/rtl/datapath.sv
+@@ -46,6 +46,8 @@ module datapath
+     input logic             req_icache_ready_i,
+     input vxrm_t            vxrm_i,
+     input tlb_cache_comm_t  dtlb_comm_i,
++    input logic[63:0]       csr_keccak_inlen,
++    input logic[2:0]        csr_keccak_fsel,
+     // icache/dcache/CSR interface output
+     output req_cpu_dcache_t req_cpu_dcache_o, 
+     output req_cpu_icache_t req_cpu_icache_o,
+@@ -1233,6 +1235,9 @@ assign debug_reg_o.rnm_read_resp = stage_no_stall_rr_q.prs1;
+         .dtlb_comm_o(dtlb_comm_o),
+         .priv_lvl_i(csr_priv_lvl_i),
+ 
++        .keccak_inlen(csr_keccak_inlen),
++        .keccak_fsel(csr_keccak_fsel),
++
+         `ifdef SIM_COMMIT_LOG
+         .store_addr_o(store_addr),
+         .store_data_o(store_data),
+diff --git a/rtl/datapath/rtl/exe_stage/rtl/alu/alu.sv b/rtl/datapath/rtl/exe_stage/rtl/alu/alu.sv
+index d214e0f..e485fe6 100644
+--- a/rtl/datapath/rtl/exe_stage/rtl/alu/alu.sv
++++ b/rtl/datapath/rtl/exe_stage/rtl/alu/alu.sv
+@@ -131,6 +131,8 @@ bus64_t alu_cmp_result;
+ bus64_t alu_logic_result;
+ bus64_t alu_count_zeros_result;
+ bus64_t alu_count_pop_result;
++bus64_t alu_crypto_result;
++bus64_t alu_xperm_result;
+ 
+ alu_add alu_add_inst (
+     .data_rs1_i(data_rs1_shifted),
+@@ -171,6 +173,19 @@ alu_count_pop alu_count_pop_inst (
+     .result_o(alu_count_pop_result)
+ );
+ 
++alu_crypto alu_crypto_inst (
++    .data_rs1_i(data_rs1),
++    .data_rs2_i(data_rs2),
++    .instr_type_i(instruction_i.instr.instr_type),
++    .result_o(alu_crypto_result)
++);
++
++alu_xperm alu_xperm_inst (
++    .data_rs1_i(data_rs1),
++    .data_rs2_i(data_rs2),
++    .result_o(alu_xperm_result)
++);
++
+ 
+ /* For Zbs extension the output from the shift module needs to be connected to
+  * the input of the logic module
+@@ -226,6 +241,12 @@ always_comb begin
+         CPOP, CPOPW: begin
+             result_modules = alu_count_pop_result;
+         end
++        PACK, PACKH: begin
++            result_modules = alu_crypto_result;
++        end
++        XPERM8: begin
++            result_modules = alu_xperm_result;
++        end
+         default: begin
+             result_modules = 64'b0;
+         end
+@@ -236,7 +257,7 @@ end
+ // Result
+ always_comb begin
+     case (instruction_i.instr.instr_type)
+-        ADD, SUB, SLL, SRL, SRA, SLT, SLTU, AND_INST, OR_INST, XOR_INST, ADDUW, SLLIUW, SH1ADD, SH1ADDUW, SH2ADD, SH2ADDUW, SH3ADD, SH3ADDUW, XNOR_INST, ORN, ANDN, ROR, ROL, MIN, MINU, MAX, MAXU, ORCB, CLZ, CTZ, CPOP, BSET, BCLR, BEXT, BINV: begin
++        ADD, SUB, SLL, SRL, SRA, SLT, SLTU, AND_INST, OR_INST, XOR_INST, ADDUW, SLLIUW, SH1ADD, SH1ADDUW, SH2ADD, SH2ADDUW, SH3ADD, SH3ADDUW, XNOR_INST, ORN, ANDN, ROR, ROL, MIN, MINU, MAX, MAXU, ORCB, CLZ, CTZ, CPOP, PACK, PACKH, XPERM8, BSET, BCLR, BEXT, BINV: begin
+             instruction_o.result = result_modules;
+         end
+         ADDW, SUBW, SLLW, SRLW, SRAW, RORW, ROLW, CLZW, CTZW, CPOPW: begin
+diff --git a/rtl/datapath/rtl/exe_stage/rtl/alu/alu_crypto.sv b/rtl/datapath/rtl/exe_stage/rtl/alu/alu_crypto.sv
+new file mode 100644
+index 0000000..90c376d
+--- /dev/null
++++ b/rtl/datapath/rtl/exe_stage/rtl/alu/alu_crypto.sv
+@@ -0,0 +1,43 @@
++/* -----------------------------------------------
++ * Project Name   : DRAC
++ * File           : alu_crypto.sv
++ * Organization   : Barcelona Supercomputing Center
++ * Author(s)      : Xavier Carril
++ * Email(s)       : xavier.carril@bsc.es
++ * -----------------------------------------------
++ * Revision History
++ *  Revision   | Author    | Description
++ * -----------------------------------------------
++ *  1.0        | X. Carril | Initial implementation
++ * -----------------------------------------------
++ */
++
++module alu_crypto
++    import drac_pkg::*;
++    import riscv_pkg::*;
++(
++    input bus64_t data_rs1_i,
++    input bus64_t data_rs2_i,
++    instr_type_t instr_type_i,
++    output bus64_t result_o
++);
++
++	localparam HALF_WIDTH = 32;
++
++	// Pack the lower half of rs1 into the upper half of rd and
++	// the lower half of rs2 into the lower half of rd.
++	always_comb begin
++		case (instr_type_i)
++			PACK : begin
++				result_o = { data_rs1_i[HALF_WIDTH-1:0], data_rs2_i[HALF_WIDTH-1:0] };
++			end
++			PACKH : begin
++				result_o = { data_rs1_i[63:HALF_WIDTH], data_rs2_i[63:HALF_WIDTH] };
++			end
++			default : begin
++				result_o = 64'b0; // Default case to avoid latches
++			end
++		endcase
++	end
++
++endmodule
+\ No newline at end of file
+diff --git a/rtl/datapath/rtl/exe_stage/rtl/alu/alu_xperm.sv b/rtl/datapath/rtl/exe_stage/rtl/alu/alu_xperm.sv
+new file mode 100644
+index 0000000..03121aa
+--- /dev/null
++++ b/rtl/datapath/rtl/exe_stage/rtl/alu/alu_xperm.sv
+@@ -0,0 +1,50 @@
++/* -----------------------------------------------
++ * Project Name   : DRAC
++ * File           : alu_xperm.v
++ * Organization   : Barcelona Supercomputing Center
++ * Author(s)      : Xavier Carril
++ * Email(s)       : xavier.carril@bsc.es
++ * -----------------------------------------------
++ * Revision History
++ *  Revision   | Author    | Description
++ *  -----------------------------------------------
++ *  1.0        | X. Carril | Initial implementation
++ * -----------------------------------------------
++ */
++
++//  Description : SystemVerilog implementation of the RISC‑V Zbkx XPERM8 instruction
++//------------------------------------------------------------------------------
++//  The module performs byte-wise permutation of "rs1_i" according to byte indices
++//  provided in "rs2_i", as defined by the RISC‑V Bit Manipulation extension.
++//  For each output byte position "i":
++//      idx  = rs2_i.byte[i];
++//      rd_o.byte[i] = (idx < XLEN/8) ? rs1_i.byte[idx] : 8'h00;
++//  The design is purely combinational
++//------------------------------------------------------------------------------
++
++module alu_xperm     
++	import drac_pkg::*;
++    import riscv_pkg::*;
++(
++    input bus64_t data_rs1_i, // Input data from rs1
++    input bus64_t data_rs2_i, // Input data from rs2 (byte indices)
++    output bus64_t result_o  // Output data (permuted bytes)
++);
++
++    // Constant: number of bytes handled by the instruction
++    localparam int unsigned BYTES = 8;
++
++    // Byte‑wise permutation loop
++    generate
++        genvar i;
++        for (i = 0; i < BYTES; i++) begin : g_xperm8
++            // Extract the index for this output byte
++            wire [7:0] idx = data_rs2_i[8*i +: 8];
++
++            // Select byte from rs1_i or return zero when the index is out of range
++            assign result_o[8*i +: 8] = (idx < BYTES) ? data_rs1_i[8*idx +: 8] : 8'h00;
++        end
++    endgenerate
++
++
++endmodule
+\ No newline at end of file
+diff --git a/rtl/datapath/rtl/exe_stage/rtl/exe_stage.sv b/rtl/datapath/rtl/exe_stage/rtl/exe_stage.sv
+index 6316403..6cfcf20 100644
+--- a/rtl/datapath/rtl/exe_stage/rtl/exe_stage.sv
++++ b/rtl/datapath/rtl/exe_stage/rtl/exe_stage.sv
+@@ -40,6 +40,9 @@
+     input logic [1:0]                   commit_store_or_amo_i, // Signal to execute stores and atomics in commit
+     input gl_index_t                    commit_store_or_amo_gl_idx_i,  // Signal from commit enables writes.
+     input tlb_cache_comm_t              dtlb_comm_i,
++
++    input logic [63:0]                  keccak_inlen,
++    input logic [2:0]                   keccak_fsel,
+     input logic [VMAXELEM_LOG:0]        vl_id_exe_i,
+     // OUTPUTS
+     output exe_wb_scalar_instr_t        arith_to_scalar_wb_o,
+@@ -93,6 +96,8 @@ bus64_t rs1_data_def;
+ bus_simd_t rs2_data_def;
+ 
+ rr_exe_arith_instr_t arith_instr;
++rr_exe_arith_instr_t pqc_ntt_instr;
++rr_exe_arith_instr_t pqc_keccak_instr;
+ rr_exe_mem_instr_t   mem_instr;
+ rr_exe_mem_instr_t   vagu_mem_instr;
+ rr_exe_simd_instr_t  simd_instr;
+@@ -103,6 +108,8 @@ exe_wb_scalar_instr_t div_to_scalar_wb;
+ exe_wb_scalar_instr_t branch_to_scalar_wb;
+ exe_wb_scalar_instr_t mem_to_scalar_wb;
+ exe_wb_scalar_instr_t simd_to_scalar_wb;
++exe_wb_scalar_instr_t pqc_to_scalar_wb;
++exe_wb_scalar_instr_t pqc_keccak_to_scalar_wb;
+ exe_wb_simd_instr_t mem_to_simd_wb;
+ exe_wb_simd_instr_t simd_to_simd_wb;
+ rr_exe_fpu_instr_t   fp_instr;
+@@ -124,10 +131,16 @@ logic set_mul_32_inst;
+ logic set_mul_64_inst;
+ logic set_div_32_inst;
+ logic set_div_64_inst;
++logic set_pqc_inst;
++logic set_pqc_keccak_inst;
++logic set_pqc_keccak_perm_inst;
+ logic ready_1cycle_inst;
+ logic ready_mul_32_inst; 
+ logic ready_mul_64_inst;
+ logic ready_div_32_inst;
++logic ready_pqc_inst;
++logic ready_pqc_keccak_inst;
++logic ready_pqc_keccak_perm_inst;
+ 
+ logic div_unit_sel;
+ logic ready_div_unit;
+@@ -145,6 +158,11 @@ logic [VMAXELEM_LOG:0] vagu_vl;
+ logic vmem_unit_stride;
+ bus64_t vagu_stride;
+ 
++logic [63:0] input_keccak;
++logic [63:0] output_keccak;
++logic ready_keccak_f1600;
++logic ready_keccak_buffer;
++
+ // Bypasses
+ `ifdef ASSERTIONS
+     always @(posedge clk_i) begin
+@@ -170,10 +188,16 @@ score_board_scalar score_board_scalar_inst(
+     .set_mul_64_i     (set_mul_64_inst),               
+     .set_div_32_i     (set_div_32_inst),               
+     .set_div_64_i     (set_div_64_inst),
++    .set_pqc_i        (set_pqc_inst),
++    .set_pqc_keccak_i (set_pqc_keccak_inst),
++    .set_pqc_keccak_perm_i (set_pqc_keccak_perm_inst),
+     .ready_1cycle_o   (ready_1cycle_inst),
+     .ready_mul_32_o   (ready_mul_32_inst),
+     .ready_mul_64_o   (ready_mul_64_inst),
+     .ready_div_32_o   (ready_div_32_inst),
++    .ready_pqc_o      (ready_pqc_inst),
++    .ready_pqc_keccak_o(ready_pqc_keccak_inst),
++    .ready_pqc_keccak_perm_o(ready_pqc_keccak_perm_inst),
+     .div_unit_sel_o   (div_unit_sel),
+     .ready_div_unit_o (ready_div_unit)
+ );
+@@ -219,6 +243,36 @@ always_comb begin
+                                               (from_rr_i.instr.rd == 'h0))
+                                       ) ? vl_id_exe_i : from_rr_i.instr.vl;
+ 
++    pqc_ntt_instr.data_rs1            = (from_rr_i.instr.unit == UNIT_PQC_NTT) ? rs1_data_def : '0;
++    pqc_ntt_instr.data_rs2            = (from_rr_i.instr.unit == UNIT_PQC_NTT) ? rs2_data_def[63:0] : '0;
++    pqc_ntt_instr.prs1                = from_rr_i.prs1;
++    pqc_ntt_instr.rdy1                = from_rr_i.rdy1;
++    pqc_ntt_instr.prs2                = from_rr_i.prs2;
++    pqc_ntt_instr.rdy2                = from_rr_i.rdy2;
++    pqc_ntt_instr.prd                 = from_rr_i.prd;
++    pqc_ntt_instr.old_prd             = from_rr_i.old_prd;
++    pqc_ntt_instr.checkpoint_done     = from_rr_i.checkpoint_done;
++    pqc_ntt_instr.chkp                = from_rr_i.chkp;
++    pqc_ntt_instr.gl_index            = from_rr_i.gl_index;
++    pqc_ntt_instr.instr               = from_rr_i.instr;
++    pqc_ntt_instr.old_pvd             = '0;
++    pqc_ntt_instr.vl                  = '0;
++
++    pqc_keccak_instr.data_rs1            = (from_rr_i.instr.unit == UNIT_PQC_KECCAK) ? rs1_data_def : '0;
++    pqc_keccak_instr.data_rs2            = (from_rr_i.instr.unit == UNIT_PQC_KECCAK) ? rs2_data_def[63:0] : '0;
++    pqc_keccak_instr.prs1                = from_rr_i.prs1;
++    pqc_keccak_instr.rdy1                = from_rr_i.rdy1;
++    pqc_keccak_instr.prs2                = from_rr_i.prs2;
++    pqc_keccak_instr.rdy2                = from_rr_i.rdy2;
++    pqc_keccak_instr.prd                 = from_rr_i.prd;
++    pqc_keccak_instr.old_prd             = from_rr_i.old_prd;
++    pqc_keccak_instr.checkpoint_done     = from_rr_i.checkpoint_done;
++    pqc_keccak_instr.chkp                = from_rr_i.chkp;
++    pqc_keccak_instr.gl_index            = from_rr_i.gl_index;
++    pqc_keccak_instr.instr               = from_rr_i.instr;
++    pqc_keccak_instr.old_pvd             = '0;
++    pqc_keccak_instr.vl                  = '0;
++
+     mem_instr.data_rs1            = from_rr_i.data_rs1;
+     mem_instr.data_rs2            = from_rr_i.data_rs2;
+     mem_instr.data_old_vd         = from_rr_i.data_old_vd;
+@@ -292,6 +346,8 @@ always_comb begin
+ 
+     if (stall_int || kill_i) begin
+         arith_instr.instr.valid   = 1'b0;
++        pqc_ntt_instr.instr.valid = 1'b0;
++        pqc_keccak_instr.instr.valid = 1'b0;
+         mem_instr.instr.valid     = 1'b0;
+         fp_instr.instr.valid      = 1'b0;
+         simd_instr.instr.valid    = 1'b0;
+@@ -348,6 +404,29 @@ assign simd_to_scalar_wb.valid = 1'b0;
+ assign simd_to_simd_wb.valid = 1'b0;
+ `endif
+ 
++iface_pqcuark_sargantana_bfu iface_pqcuark_sargantana_bfu_inst (
++    .clk_i          (clk_i),
++    .rstn_i         (rstn_i),
++    .flush_i        (flush_i),
++    .instruction_i  (pqc_ntt_instr),
++    .instruction_o  (pqc_to_scalar_wb)
++);
++
++iface_pqcuark_sargantana_keccak iface_pqcuark_sargantana_keccak_inst (
++    .clk_i          (clk_i),
++    .rstn_i         (rstn_i),
++    .flush_i        (flush_i),
++    .inlen_i          (keccak_inlen),
++    .function_sel_i   (keccak_fsel),
++    .input_data_i     (input_keccak),
++    .input_valid_i    (mem_to_scalar_wb.valid && (mem_to_scalar_wb.instr_type == PQC_KECCAK_LD)),
++    .output_data_o   (output_keccak),
++    .ready_keccak_f1600_o(ready_keccak_f1600),
++    .ready_keccak_buffer_o(ready_keccak_buffer),
++    .instruction_i  (pqc_keccak_instr),
++    .instruction_o  (pqc_keccak_to_scalar_wb)         
++);
++
+ `ifndef DISABLE_SIMD
+ assign vagu_vl = ((from_rr_i.instr.instr_type == VLM)  || (from_rr_i.instr.instr_type == VSM))  ? (from_rr_i.instr.vl[VMAXELEM_LOG:0] + 'd7) >> 3 : 
+                  ((from_rr_i.instr.instr_type == VL1R) || (from_rr_i.instr.instr_type == VS1R)) ? trunc_7_vmaxelem_log(VMAXELEM >> from_rr_i.instr.mem_size[1:0]) :
+@@ -455,6 +534,8 @@ mem_unit #(
+     .dtlb_comm_i(dtlb_comm_i),
+     .dtlb_comm_o(dtlb_comm_o),
+     .priv_lvl_i(priv_lvl_i),
++    .st_keccak(output_keccak),
++    .ld_keccak(input_keccak),
+ //    .vl_i(vl_i),
+     .req_cpu_dcache_o       (req_cpu_dcache_o),
+     .instruction_scalar_o   (mem_to_scalar_wb),
+@@ -500,18 +581,24 @@ always_comb begin
+         mem_to_fp_wb_o      = 'h0;
+     end
+ 
++    // >0 latency
+     if (mul_to_scalar_wb.valid) begin
+         mul_div_to_scalar_wb_o = mul_to_scalar_wb;
+     end else if (div_to_scalar_wb.valid) begin
+-        mul_div_to_scalar_wb_o = div_to_scalar_wb;
++        mul_div_to_scalar_wb_o = div_to_scalar_wb;   
++     end else if (pqc_keccak_to_scalar_wb.valid) begin
++        mul_div_to_scalar_wb_o = pqc_keccak_to_scalar_wb; 
+     end else begin
+         mul_div_to_scalar_wb_o = 'h0;
+     end
+-    
++
++    // 0 latency    
+     if (alu_to_scalar_wb.valid) begin
+         arith_to_scalar_wb_o = alu_to_scalar_wb;
+     end else if (branch_to_scalar_wb.valid) begin
+         arith_to_scalar_wb_o = branch_to_scalar_wb;
++    end else if (pqc_to_scalar_wb.valid) begin
++        arith_to_scalar_wb_o = pqc_to_scalar_wb;
+     end else begin
+         arith_to_scalar_wb_o = 'h0;
+     end
+@@ -536,6 +623,9 @@ always_comb begin
+     set_div_64_inst = 1'b0;
+     set_mul_32_inst = 1'b0;
+     set_mul_64_inst = 1'b0;
++    set_pqc_inst    = 1'b0;
++    set_pqc_keccak_inst    = 1'b0;
++    set_pqc_keccak_perm_inst    = 1'b0;
+     pmu_stall_mem_o = 1'b0; 
+     stall_fpu_int   = 1'b0;
+     if (from_rr_i.instr.valid && !kill_i) begin
+@@ -556,7 +646,11 @@ always_comb begin
+             set_mul_64_inst = ready & ready_mul_64_inst;
+         end
+         else if ((from_rr_i.instr.unit == UNIT_ALU) | (from_rr_i.instr.unit == UNIT_BRANCH) | (from_rr_i.instr.unit == UNIT_SYSTEM)) begin
+-            stall_int = ~ready;
++            stall_int = ~ready | ~ready_1cycle_inst;
++        end
++        else if ((from_rr_i.instr.unit == UNIT_MEM) & (from_rr_i.instr.instr_type ==  PQC_KECCAK_LD | from_rr_i.instr.instr_type ==  PQC_KECCAK_ST)) begin
++            stall_int = stall_mem | stall_vagu | (~ready) | (~ready_keccak_f1600);
++            pmu_stall_mem_o = stall_mem | stall_vagu | (~ready) | (~ready_keccak_f1600);
+         end
+         else if (from_rr_i.instr.unit == UNIT_MEM) begin
+             stall_int = stall_mem | stall_vagu | (~ready);
+@@ -570,6 +664,18 @@ always_comb begin
+             stall_simd_int = stall_simd;
+             stall_int = (~ready);
+         end
++        else if ((from_rr_i.instr.unit == UNIT_PQC_NTT)) begin
++            stall_int = ~ready | ~ready_pqc_inst;
++            set_pqc_inst = ready & ready_pqc_inst;
++        end
++        else if ((from_rr_i.instr.unit == UNIT_PQC_KECCAK) & (from_rr_i.instr.instr_type != PQC_KECCAK_F1600)) begin
++            stall_int = ~ready | ~ready_pqc_keccak_inst | (~ready_keccak_f1600);
++            set_pqc_keccak_inst = ready & ready_pqc_keccak_inst & (ready_keccak_f1600);
++        end
++        else if ((from_rr_i.instr.unit == UNIT_PQC_KECCAK) & (from_rr_i.instr.instr_type == PQC_KECCAK_F1600)) begin
++            stall_int = ~ready | ~ready_pqc_keccak_perm_inst |  (~ready_keccak_f1600) | (~ready_keccak_buffer);
++            set_pqc_keccak_perm_inst = ready & ready_pqc_keccak_perm_inst & (ready_keccak_f1600) & (ready_keccak_buffer);
++        end
+     end
+ end
+ 
+diff --git a/rtl/datapath/rtl/exe_stage/rtl/mem_unit.sv b/rtl/datapath/rtl/exe_stage/rtl/mem_unit.sv
+index ec174b9..9ba8088 100644
+--- a/rtl/datapath/rtl/exe_stage/rtl/mem_unit.sv
++++ b/rtl/datapath/rtl/exe_stage/rtl/mem_unit.sv
+@@ -39,6 +39,8 @@ module mem_unit
+     input gl_index_t             commit_store_or_amo_gl_idx_i,  // Signal from commit enables writes.
+     input tlb_cache_comm_t       dtlb_comm_i,
+ 
++    input  logic[63:0]           st_keccak,
++    output logic[63:0]           ld_keccak,
+ 
+     output req_cpu_dcache_t      req_cpu_dcache_o,       // Request to dcache
+     output exe_wb_simd_instr_t   instruction_simd_o,     // Output instruction     
+@@ -230,7 +232,7 @@ assign flush_to_lsq = kill_i | flush_i;
+ // Input instruction to LSQ
+ assign instruction_to_lsq.instr         = ((instruction_i.instr.unit == UNIT_MEM) && instruction_i.instr.valid) ? instruction_i.instr : 'h0 ;
+ assign instruction_to_lsq.data_rs1      = (instruction_i.instr.mem_type == AMO) ? instruction_i.data_rs1 : trunc_sum_64bits(instruction_i.data_rs1 + instruction_i.instr.imm);
+-assign instruction_to_lsq.data_rs2      = instruction_i.data_rs2;
++assign instruction_to_lsq.data_rs2      = (instruction_i.instr.instr_type == PQC_KECCAK_ST) ? st_keccak : instruction_i.data_rs2;
+ assign instruction_to_lsq.data_old_vd   = instruction_i.data_old_vd;
+ assign instruction_to_lsq.data_vm       = instruction_i.data_vm;
+ assign instruction_to_lsq.sew           = instruction_i.sew;
+@@ -427,7 +429,8 @@ end
+ always_comb begin
+     req_cpu_dcache_o.data_rs1        = instruction_to_dcache.data_rs1;
+     req_cpu_dcache_o.data_rs2        = instruction_to_dcache.data_rs2;
+-    req_cpu_dcache_o.instr_type      = (killed_dcache_req_d) ? ADD : instruction_to_dcache.instr.instr_type;
++    // Indicate to the cache that my custom instrucctions are double (because of 64 bits) loads and stores. If not it cannot recognize what are these instructions!
++    req_cpu_dcache_o.instr_type      = (killed_dcache_req_d) ? ADD : (instruction_to_dcache.instr.instr_type == PQC_KECCAK_ST) ? SD : (instruction_to_dcache.instr.instr_type == PQC_KECCAK_LD) ? LD : instruction_to_dcache.instr.instr_type;
+     req_cpu_dcache_o.mem_size        = instruction_to_dcache.instr.mem_size;
+     req_cpu_dcache_o.rd              = tag_id;
+     req_cpu_dcache_o.is_amo_or_store = instruction_to_dcache.is_amo_or_store;
+@@ -982,7 +985,7 @@ end
+ assign instruction_scalar_o.valid         = instruction_to_wb.instr.valid && instruction_to_wb.instr.regfile_we;
+ assign instruction_scalar_o.pc            = instruction_to_wb.instr.pc;
+ assign instruction_scalar_o.bpred         = instruction_to_wb.instr.bpred;
+-assign instruction_scalar_o.rs1           = instruction_to_wb.instr.rs1;
++assign instruction_scalar_o.rs1           = (instruction_i.instr.instr_type == PQC_KECCAK_LD) ? '0 : instruction_to_wb.instr.rs1;
+ assign instruction_scalar_o.rd            = instruction_to_wb.instr.rd;
+ assign instruction_scalar_o.regfile_we    = instruction_to_wb.instr.regfile_we;
+ assign instruction_scalar_o.instr_type    = instruction_to_wb.instr.instr_type;
+@@ -1000,7 +1003,7 @@ assign instruction_scalar_o.chkp          = instruction_to_wb.chkp;
+ assign instruction_scalar_o.gl_index      = instruction_to_wb.gl_index;
+ assign instruction_scalar_o.branch_taken  = 1'b0;
+ assign instruction_scalar_o.result_pc     = 0;
+-assign instruction_scalar_o.result        = data_to_wb[63:0];
++assign instruction_scalar_o.result        = (instruction_to_wb.instr.instr_type == PQC_KECCAK_LD) ? '0 : data_to_wb[63:0];
+ assign instruction_scalar_o.ex            = instruction_to_wb.ex;
+ assign instruction_scalar_o.fp_status     = 'h0;
+ assign instruction_scalar_o.mem_type      = instruction_to_wb.instr.mem_type;
+@@ -1008,6 +1011,8 @@ assign instruction_scalar_o.vl            = instruction_to_wb.vl;
+ assign instruction_scalar_o.sew            = instruction_to_wb.instr.sew;
+ assign instruction_scalar_o.lmul          = instruction_to_wb.instr.lmul;
+ 
++assign ld_keccak                           = (instruction_to_wb.instr.instr_type == PQC_KECCAK_LD) ? data_to_wb[63:0] : '0;
++
+ // Output Float Instruction
+ assign instruction_fp_o.valid             = instruction_to_wb.instr.valid && instruction_to_wb.instr.fregfile_we; //fp_instr;
+ assign instruction_fp_o.pc                = instruction_to_wb.instr.pc;
+diff --git a/rtl/datapath/rtl/exe_stage/rtl/score_board_scalar.sv b/rtl/datapath/rtl/exe_stage/rtl/score_board_scalar.sv
+index c744a69..7d4194e 100644
+--- a/rtl/datapath/rtl/exe_stage/rtl/score_board_scalar.sv
++++ b/rtl/datapath/rtl/exe_stage/rtl/score_board_scalar.sv
+@@ -30,12 +30,17 @@ module score_board_scalar
+     input logic             set_mul_64_i,               // Insert new Mul instruction of 3  cycles
+     input logic             set_div_32_i,               // Insert new Div instruction of 17 cycles
+     input logic             set_div_64_i,               // Insert new Div instruction of 32 cycles
+-
++    input logic             set_pqc_i,                  // Insert new PQCUARK instruction of 3 cycles
++    input logic             set_pqc_keccak_i,
++    input logic             set_pqc_keccak_perm_i,
+     // OUTPUTS
+     output logic            ready_1cycle_o,             // Instruction of 1 cycle duration can be issued
+     output logic            ready_mul_32_o,             // Instruction of 2 cycles duration can be issued
+     output logic            ready_mul_64_o,             // Instruction of 3 cycles duration can be issued
+-    output logic            ready_div_32_o,             // Instruction of 8 cycles duration can be issued
++    output logic            ready_div_32_o,             // Instruction of 17 cycles duration can be issued
++    output logic            ready_pqc_o,                // Instruction of 4 cycles duration can be issued
++    output logic            ready_pqc_keccak_o,
++    output logic            ready_pqc_keccak_perm_o,
+     output logic            div_unit_sel_o,             // Select Div unit for the Div instruction
+     output logic            ready_div_unit_o            // At least one of the Div units is free
+ );
+@@ -89,6 +94,16 @@ module score_board_scalar
+         end else begin
+             inst_d[32] = 1'b0;   
+         end
++
++        if (set_pqc_i) begin
++            inst_d[3] = 1'b1;
++        end
++        if (set_pqc_keccak_i) begin
++            inst_d[0] = 1'b1;
++        end
++        if (set_pqc_keccak_perm_i) begin
++            inst_d[12] = 1'b1; 
++        end
+     end
+ 
+     always_ff @(posedge clk_i, negedge rstn_i) begin
+@@ -110,6 +125,10 @@ module score_board_scalar
+     assign ready_mul_32_o = (~inst_q[1]);
+     assign ready_mul_64_o = (~inst_q[2]);
+     assign ready_div_32_o = (~inst_q[17]);
++    assign ready_pqc_o = (~inst_q[3]);
++    // Posar-ho nomes pel permute
++    assign ready_pqc_keccak_o = (~inst_q[0]);
++    assign ready_pqc_keccak_perm_o = (~inst_q[11]);
+     assign div_unit_sel_o = ~free_div_unit[0];
+     assign ready_div_unit_o = free_div_unit[0] | free_div_unit[1];
+ 
+diff --git a/rtl/datapath/rtl/id_stage/rtl/decoder.sv b/rtl/datapath/rtl/id_stage/rtl/decoder.sv
+index 1305259..1d59c35 100644
+--- a/rtl/datapath/rtl/id_stage/rtl/decoder.sv
++++ b/rtl/datapath/rtl/id_stage/rtl/decoder.sv
+@@ -561,6 +561,12 @@ module decoder
+                         {F7_NORMAL,F3_SRL_SRA}: begin
+                             decode_instr_int.instr_type = SRL;
+                         end
++                        {F7_PACK, F3_PACK}: begin
++                            decode_instr_int.instr_type = PACK;
++                        end
++                        {F7_PACK, F3_PACKH}: begin
++                            decode_instr_int.instr_type = PACKH;
++                        end
+                         {F7_SRAI_SUB_SRA_NLOG,F3_SRL_SRA}: begin
+                             decode_instr_int.instr_type = SRA;
+                         end
+@@ -646,6 +652,9 @@ module decoder
+                         {F7_BSET_ORCB, F3_BSET}: begin
+                             decode_instr_int.instr_type = BSET;
+                         end
++                        {F7_BSET_ORCB, F3_XPERM8}: begin
++                            decode_instr_int.instr_type = XPERM8;
++                        end
+                         {F7_BCLR_BEXT, F3_BCLR}: begin
+                             decode_instr_int.instr_type = BCLR;
+                         end
+@@ -2611,6 +2620,78 @@ module decoder
+                         end
+                     end
+                 end
++                OP_CUSTOM2: begin
++                    decode_instr_int.regfile_we = 1'b1;
++                    decode_instr_int.use_rs1 = 1'b1;
++                    decode_instr_int.use_rs2 = 1'b1;
++                    unique case ({decode_i.inst.rtype.func7})
++                        {F7_PQCUARK_NTT}: begin
++                            decode_instr_int.unit = UNIT_PQC_NTT;
++                            unique case ({decode_i.inst.rtype.func3})
++                                {F3_PQC_BF_NTT_KEM}: begin
++                                    decode_instr_int.instr_type = PQC_BF_NTT_KEM;
++                                end
++                                {F3_PQC_BF_NTT_DSA}: begin
++                                    decode_instr_int.instr_type = PQC_BF_NTT_DSA;
++                                end
++                                {F3_PQC_BF_INTT_KEM}: begin
++                                    decode_instr_int.instr_type = PQC_BF_INTT_KEM;
++                                end
++                                {F3_PQC_BF_INTT_DSA}: begin
++                                    decode_instr_int.instr_type = PQC_BF_INTT_DSA;
++                                end
++                                {F3_PQC_BF_FQMUL16_L}: begin
++                                    decode_instr_int.instr_type = PQC_BF_FQMUL16_L;
++                                end
++                                {F3_PQC_BF_FQMUL32_L}: begin
++                                    decode_instr_int.instr_type = PQC_BF_FQMUL32_L;
++                                end
++                                {F3_PQC_BF_FQMUL16_H}: begin
++                                    decode_instr_int.instr_type = PQC_BF_FQMUL16_H;
++                                end
++                                {F3_PQC_BF_FQMUL32_H}: begin
++                                    decode_instr_int.instr_type = PQC_BF_FQMUL32_H;
++                                end
++                                default: begin
++                                    xcpt_illegal_instruction_int = 1'b1;
++                                end
++                            endcase
++                        end
++                        {F7_PQCUARK_KECCAK}: begin
++                            unique case ({decode_i.inst.rtype.func3})
++                                {F3_PQC_KECCAK_INIT}: begin
++                                    decode_instr_int.unit = UNIT_PQC_KECCAK;
++                                    decode_instr_int.instr_type = PQC_KECCAK_INIT;
++                                end
++                                {F3_PQC_KECCAK_LD}: begin
++                                    decode_instr_int.unit       = UNIT_MEM;
++                                    decode_instr_int.instr_type = PQC_KECCAK_LD;
++                                    decode_instr_int.mem_size   = 4'b0111;
++                                    decode_instr_int.mem_type   = LOAD;
++                                    decode_instr_int.use_rs1    = 1'b1;     // base address
++                                    //decode_instr_int.regfile_we = 1'b0;  // no write to rd
++                                end
++                                {F3_PQC_KECCAK_F1600}: begin
++                                    decode_instr_int.unit = UNIT_PQC_KECCAK;
++                                    decode_instr_int.instr_type = PQC_KECCAK_F1600;
++                                end
++                                {F3_PQC_KECCAK_ST}: begin
++                                    decode_instr_int.unit       = UNIT_MEM;
++                                    decode_instr_int.instr_type = PQC_KECCAK_ST;
++                                    decode_instr_int.mem_type   = STORE;
++                                    decode_instr_int.use_rs1    = 1'b1;     // base address
++                                    decode_instr_int.use_rs2    = 1'b0;     // data comes from KECCAK, not reg
++                                    decode_instr_int.regfile_we = 1'b0;  // no write to rd
++                                    decode_instr_int.use_imm = 1'b0;
++                                end
++                                default: begin
++                                    xcpt_illegal_instruction_int = 1'b1;
++                                end
++                            endcase
++                        end
++                        
++                    endcase
++                end
+                 default: begin
+                     // By default this is not a valid instruction
+                     xcpt_illegal_instruction_int = 1'b1;
+diff --git a/rtl/top_drac.sv b/rtl/top_drac.sv
+index 6864b04..1ec228a 100644
+--- a/rtl/top_drac.sv
++++ b/rtl/top_drac.sv
+@@ -137,6 +137,10 @@ assign priv_lvl_o = csr_priv_lvl;
+ 
+ addr_t dcache_addr;
+ 
++// KECCAK
++logic [63:0]    csr_keccak_inlen;
++logic [2:0]     csr_keccak_fsel;
++
+ //--PMU
+ to_PMU_t       pmu_flags    ;
+ 
+@@ -300,6 +304,8 @@ datapath #(
+     .dtlb_comm_i(dtlb_core_comm),
+     .debug_contr_i(debug_contr_i),
+     .debug_reg_i(debug_reg_i),
++    .csr_keccak_inlen(csr_keccak_inlen),
++    .csr_keccak_fsel(csr_keccak_fsel),
+     // Output datapath
+     .req_cpu_dcache_o(req_cpu_dcache_o),
+     .req_cpu_icache_o(req_cpu_icache_o),
+@@ -414,7 +420,9 @@ csr_bsc #(
+     .perf_we_o(we_csr_hpm),
+     .perf_mcountinhibit_o(mcountinhibit_hpm),
+     .perf_count_ovf_int_req_i(count_ovf_int_req),
+-    .perf_mhpm_ovf_bits_i(mhpm_ovf_bits)
++    .perf_mhpm_ovf_bits_i(mhpm_ovf_bits),
++    .csr_keccak_inlen_o(csr_keccak_inlen),
++    .csr_keccak_fsel_o(csr_keccak_fsel)
+ );
+ 
+ bsc_mmu bsc_mmu_inst (
+-- 
+2.50.1 (Apple Git-155)
+

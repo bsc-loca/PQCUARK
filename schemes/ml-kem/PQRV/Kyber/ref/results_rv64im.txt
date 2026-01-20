@@ -1,0 +1,33 @@
+Test speed of Kyber512
+gen_a:                          78321 cycles
+poly_getnoise_eta1:             12796 cycles
+NTT:                            34978 cycles
+INVNTT:                         55719 cycles
+poly_basemul:                   17817 cycles
+polyvec_basemul_acc:            41813 cycles
+kyber_keypair:                 438392 cycles
+kyber_encaps:                  623848 cycles
+kyber_decaps:                  779698 cycles
+
+Test speed of Kyber768
+gen_a:                         181050 cycles
+poly_getnoise_eta1:              7990 cycles
+NTT:                            34983 cycles
+INVNTT:                         55730 cycles
+poly_basemul:                   17816 cycles
+polyvec_basemul_acc:            60152 cycles
+kyber_keypair:                 742535 cycles
+kyber_encaps:                  986815 cycles
+kyber_decaps:                 1185130 cycles
+
+Test speed of Kyber1024
+gen_a:                         323109 cycles
+poly_getnoise_eta1:              7990 cycles
+NTT:                            34995 cycles
+INVNTT:                         55722 cycles
+poly_basemul:                   17816 cycles
+polyvec_basemul_acc:            78548 cycles
+kyber_keypair:                1137392 cycles
+kyber_encaps:                 1436401 cycles
+kyber_decaps:                 1673577 cycles
+

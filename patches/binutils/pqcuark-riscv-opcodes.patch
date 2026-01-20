@@ -1,0 +1,184 @@
+--- a/include/opcode/riscv-opc.h
++++ b/include/opcode/riscv-opc.h
+@@ -3823,6 +3823,74 @@
+ #define MASK_MIPS_PAUSE  0xffffffff
+ #define MATCH_MIPS_PREF 0x0000000b
+ #define MASK_MIPS_PREF 0xe000707f
++/*CUSTOM OP*/
++#define MATCH_GMX_BPM 0x200000b
++#define MASK_GMX_BPM 0xfe00707f
++#define MATCH_GMX_CSRR 0x200200b
++#define MASK_GMX_CSRR 0xfe0ff07f
++#define MATCH_GMX_CSRW 0x200300b
++#define MASK_GMX_CSRW 0xfe007fff
++#define MATCH_GMX_H 0x100b
++#define MASK_GMX_H 0xfe00707f
++#define MATCH_GMX_PIG 0x200100b
++#define MASK_GMX_PIG 0xfe00707f
++#define MATCH_GMX_PSR 0x500b
++#define MASK_GMX_PSR 0xfff0707f
++#define MATCH_GMX_PSRMIN 0x600b
++#define MASK_GMX_PSRMIN 0xfff0707f
++#define MATCH_GMX_TB 0x200b
++#define MASK_GMX_TB 0xfe00707f
++#define MATCH_GMX_TBQ 0x400b
++#define MASK_GMX_TBQ 0xfffff07f
++#define MATCH_GMX_TPS 0x300b
++#define MASK_GMX_TPS 0xfe007fff
++#define MATCH_GMX_V 0xb
++#define MASK_GMX_V 0xfe00707f
++#define MATCH_SMX_CMS 0x400600b
++#define MASK_SMX_CMS 0xfe007fff
++#define MATCH_SMX_COLH 0x400100b
++#define MASK_SMX_COLH 0xfe00707f
++#define MATCH_SMX_COLV 0x400000b
++#define MASK_SMX_COLV 0xfe00707f
++#define MATCH_SMX_PACK 0x400200b
++#define MASK_SMX_PACK 0xfff0707f
++#define MATCH_SMX_REDSUM 0x600000b
++#define MASK_SMX_REDSUM 0xfff0707f
++#define MATCH_SMX_RO 0x400700b
++#define MASK_SMX_RO 0xfff07fff
++#define MATCH_SMX_TILEH 0x400400b
++#define MASK_SMX_TILEH 0xfe00707f
++#define MATCH_SMX_TILEV 0x400300b
++#define MASK_SMX_TILEV 0xfe00707f
++#define MATCH_SMX_TPS 0x400500b
++#define MASK_SMX_TPS 0xfe007fff
++#define MASK_PQCUARK_BFNTTK 0xfe00707f
++#define MATCH_PQCUARK_BFNTTK 0x0000005b
++#define MASK_PQCUARK_BFINTTK 0xfe00707f
++#define MATCH_PQCUARK_BFINTTK 0x0000105b
++#define MASK_PQCUARK_BFNTTD 0xfe00707f
++#define MATCH_PQCUARK_BFNTTD 0x0000205b
++#define MASK_PQCUARK_BFINTTD 0xfe00707f
++#define MATCH_PQCUARK_BFINTTD 0x0000305b
++
++#define MASK_PQCUARK_BFFQMUL16_L 0xfe00707f
++#define MATCH_PQCUARK_BFFQMUL16_L 0x0000405b
++#define MASK_PQCUARK_BFFQMUL32_L 0xfe00707f
++#define MATCH_PQCUARK_BFFQMUL32_L 0x0000505b
++#define MASK_PQCUARK_BFFQMUL16_H 0xfe00707f
++#define MATCH_PQCUARK_BFFQMUL16_H 0x0000605b
++#define MASK_PQCUARK_BFFQMUL32_H 0xfe00707f
++#define MATCH_PQCUARK_BFFQMUL32_H 0x0000705b
++
++#define MATCH_KECCAK_F1600 0x200205b
++#define MASK_KECCAK_F1600 0xffffffff
++#define MATCH_KECCAK_INIT 0x200005b
++#define MASK_KECCAK_INIT 0xffffffff
++#define MATCH_KECCAK_LD 0x200105b
++#define MASK_KECCAK_LD 0xfff07fff
++#define MATCH_KECCAK_ST 0x200305b
++#define MASK_KECCAK_ST 0xfff07fff
++
+ /* Unprivileged Counter/Timers CSR addresses.  */
+ #define CSR_CYCLE 0xc00
+ #define CSR_TIME 0xc01
+@@ -4297,6 +4365,16 @@
+ #define CSR_VLENB 0xc22
+ /* Ssqosid CSR addresses.  */
+ #define CSR_SRMCFG 0x181
++/*Custom CSR*/
++#define CSR_GMX_T 0x810
++#define CSR_GMX_P 0x811
++#define CSR_GMX_TB_LO 0x812
++#define CSR_GMX_TB_HI 0x813
++#define CSR_GMX_POS 0x814
++#define CSR_GMX_SAVE 0x815
++#define CSR_SMX_RO 0x816
++#define CSR_SMX_CONFIG 0x817
++#define CSR_SMX_SAVE 0x818
+ #endif /* RISCV_ENCODING_H */
+ #ifdef DECLARE_INSN
+ DECLARE_INSN(slli_rv32, MATCH_SLLI_RV32, MASK_SLLI_RV32)
+@@ -4957,6 +5035,40 @@
+ /* XVentanaCondOps instructions. */
+ DECLARE_INSN(vt_maskc, MATCH_VT_MASKC, MASK_VT_MASKC)
+ DECLARE_INSN(vt_maskcn, MATCH_VT_MASKCN, MASK_VT_MASKCN)
++/*Custom instructions*/
++DECLARE_INSN(gmx_bpm, MATCH_GMX_BPM, MASK_GMX_BPM)
++DECLARE_INSN(gmx_csrr, MATCH_GMX_CSRR, MASK_GMX_CSRR)
++DECLARE_INSN(gmx_csrw, MATCH_GMX_CSRW, MASK_GMX_CSRW)
++DECLARE_INSN(gmx_h, MATCH_GMX_H, MASK_GMX_H)
++DECLARE_INSN(gmx_pig, MATCH_GMX_PIG, MASK_GMX_PIG)
++DECLARE_INSN(gmx_psr, MATCH_GMX_PSR, MASK_GMX_PSR)
++DECLARE_INSN(gmx_psrmin, MATCH_GMX_PSRMIN, MASK_GMX_PSRMIN)
++DECLARE_INSN(gmx_tb, MATCH_GMX_TB, MASK_GMX_TB)
++DECLARE_INSN(gmx_tbq, MATCH_GMX_TBQ, MASK_GMX_TBQ)
++DECLARE_INSN(gmx_tps, MATCH_GMX_TPS, MASK_GMX_TPS)
++DECLARE_INSN(gmx_v, MATCH_GMX_V, MASK_GMX_V)
++DECLARE_INSN(smx_cms, MATCH_SMX_CMS, MASK_SMX_CMS)
++DECLARE_INSN(smx_colh, MATCH_SMX_COLH, MASK_SMX_COLH)
++DECLARE_INSN(smx_colv, MATCH_SMX_COLV, MASK_SMX_COLV)
++DECLARE_INSN(smx_pack, MATCH_SMX_PACK, MASK_SMX_PACK)
++DECLARE_INSN(smx_redsum, MATCH_SMX_REDSUM, MASK_SMX_REDSUM)
++DECLARE_INSN(smx_ro, MATCH_SMX_RO, MASK_SMX_RO)
++DECLARE_INSN(smx_tileh, MATCH_SMX_TILEH, MASK_SMX_TILEH)
++DECLARE_INSN(smx_tilev, MATCH_SMX_TILEV, MASK_SMX_TILEV)
++DECLARE_INSN(smx_tps, MATCH_SMX_TPS, MASK_SMX_TPS)
++
++DECLARE_INSN(pqcuark_bfnttk, MATCH_PQCUARK_BFNTTK, MASK_PQCUARK_BFNTTK)
++DECLARE_INSN(pqcuark_bfinttk, MATCH_PQCUARK_BFINTTK, MASK_PQCUARK_BFINTTK)
++DECLARE_INSN(pqcuark_bfnttd, MATCH_PQCUARK_BFNTTD, MASK_PQCUARK_BFNTTD)
++DECLARE_INSN(pqcuark_bfinttd, MATCH_PQCUARK_BFINTTD, MASK_PQCUARK_BFINTTD)
++DECLARE_INSN(pqcuark_bffqmul16_l, MATCH_PQCUARK_BFFQMUL16_L, MASK_PQCUARK_BFFQMUL16_L)
++DECLARE_INSN(pqcuark_bffqmul32_l, MATCH_PQCUARK_BFFQMUL32_L, MASK_PQCUARK_BFFQMUL32_L)
++DECLARE_INSN(pqcuark_bffqmul16_h, MATCH_PQCUARK_BFFQMUL16_H, MASK_PQCUARK_BFFQMUL16_H)
++DECLARE_INSN(pqcuark_bffqmul32_h, MATCH_PQCUARK_BFFQMUL32_H, MASK_PQCUARK_BFFQMUL32_H)
++DECLARE_INSN(keccak_f1600, MATCH_KECCAK_F1600, MASK_KECCAK_F1600)
++DECLARE_INSN(keccak_init, MATCH_KECCAK_INIT, MASK_KECCAK_INIT)
++DECLARE_INSN(keccak_ld, MATCH_KECCAK_LD, MASK_KECCAK_LD)
++DECLARE_INSN(keccak_st, MATCH_KECCAK_ST, MASK_KECCAK_ST)
+ 
+ /* Zicfiss instructions.  */
+ DECLARE_INSN(sspush, MATCH_SSPUSH, MASK_SSPUSH)
+--- a/opcodes/riscv-opc.c
++++ b/opcodes/riscv-opc.c
+@@ -1460,6 +1460,46 @@
+ {"sm3p0",    0, INSN_CLASS_ZKSH,    "d,s",    MATCH_SM3P0, MASK_SM3P0, match_opcode, 0 },
+ {"sm3p1",    0, INSN_CLASS_ZKSH,    "d,s",    MATCH_SM3P1, MASK_SM3P1, match_opcode, 0 },
+ 
++/* Custom instructions.  */
++/* gmx instructions */
++{"gmx.v",     64, INSN_CLASS_I, "d,s,t", MATCH_GMX_V,  MASK_GMX_V,  match_opcode, 0 },
++{"gmx.h",     64, INSN_CLASS_I, "d,s,t", MATCH_GMX_H,  MASK_GMX_H,  match_opcode, 0 },
++{"gmx.tb",    64, INSN_CLASS_I, "d,s,t", MATCH_GMX_TB, MASK_GMX_TB, match_opcode, 0 },
++{"gmx.tbq",   64, INSN_CLASS_I, "d",     MATCH_GMX_TBQ, MASK_GMX_TBQ, match_opcode, 0 },
++{"gmx.tps",   64, INSN_CLASS_I, "s,t",   MATCH_GMX_TPS, MASK_GMX_TPS, match_opcode, 0 },
++{"gmx.psr",   64, INSN_CLASS_I, "d,s",   MATCH_GMX_PSR, MASK_GMX_PSR, match_opcode, 0 },
++{"gmx.psrmin",64, INSN_CLASS_I, "d,s",   MATCH_GMX_PSRMIN, MASK_GMX_PSRMIN, match_opcode, 0 },
++{"gmx.pig",   64, INSN_CLASS_I, "d,s,t", MATCH_GMX_PIG, MASK_GMX_PIG, match_opcode, 0 },
++{"gmx.bpm",   64, INSN_CLASS_I, "d,s,t", MATCH_GMX_BPM, MASK_GMX_BPM, match_opcode, 0 },
++{"gmx.csrr",  64, INSN_CLASS_I, "d,<",   MATCH_GMX_CSRR, MASK_GMX_CSRR, match_opcode, 0 },
++{"gmx.csrw",  64, INSN_CLASS_I, "s,<",   MATCH_GMX_CSRW, MASK_GMX_CSRW, match_opcode, 0 },
++{"smx.colv",  64, INSN_CLASS_I, "d,s,t", MATCH_SMX_COLV,  MASK_SMX_COLV,  match_opcode, 0 },
++{"smx.colh",  64, INSN_CLASS_I, "d,s,t", MATCH_SMX_COLH,  MASK_SMX_COLH,  match_opcode, 0 },
++{"smx.pack",  64, INSN_CLASS_I, "d,s",   MATCH_SMX_PACK,  MASK_SMX_PACK,  match_opcode, 0 },
++{"smx.tilev", 64, INSN_CLASS_I, "d,s,t", MATCH_SMX_TILEV,  MASK_SMX_TILEV,  match_opcode, 0 },
++{"smx.tileh", 64, INSN_CLASS_I, "d,s,t", MATCH_SMX_TILEH,  MASK_SMX_TILEH,  match_opcode, 0 },
++{"smx.tps",   64, INSN_CLASS_I, "s,t",   MATCH_SMX_TPS,  MASK_SMX_TPS,  match_opcode, 0 },
++{"smx.cms",   64, INSN_CLASS_I, "s,t",   MATCH_SMX_CMS,  MASK_SMX_CMS,  match_opcode, 0 },
++{"smx.ro",    64, INSN_CLASS_I, "s",     MATCH_SMX_RO,  MASK_SMX_RO,  match_opcode, 0 },
++{"smx.redsum",64, INSN_CLASS_I, "d,s",   MATCH_SMX_REDSUM,  MASK_SMX_REDSUM,  match_opcode, 0 },
++
++/* PQCUARK instructions*/
++{"pqcuark.bfnttk",  64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFNTTK,  MASK_PQCUARK_BFNTTK,  match_opcode, 0 },
++{"pqcuark.bfinttk", 64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFINTTK,  MASK_PQCUARK_BFINTTK,  match_opcode, 0 },
++{"pqcuark.bfnttd",  64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFNTTD,  MASK_PQCUARK_BFNTTD,  match_opcode, 0 },
++{"pqcuark.bfinttd", 64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFINTTD,  MASK_PQCUARK_BFINTTD,  match_opcode, 0 },
++
++{"pqcuark.bffqmul16.l", 64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFFQMUL16_L,  MASK_PQCUARK_BFFQMUL16_L,  match_opcode, 0 },
++{"pqcuark.bffqmul32.l", 64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFFQMUL32_L,  MASK_PQCUARK_BFFQMUL32_L,  match_opcode, 0 },
++{"pqcuark.bffqmul16.h", 64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFFQMUL16_H,  MASK_PQCUARK_BFFQMUL16_H,  match_opcode, 0 },
++{"pqcuark.bffqmul32.h", 64, INSN_CLASS_I, "d,s,t", MATCH_PQCUARK_BFFQMUL32_H,  MASK_PQCUARK_BFFQMUL32_H,  match_opcode, 0 },
++
++/* PQCUARK KECCAK instructions*/
++{"keccak.init",  64, INSN_CLASS_I, "" , MATCH_KECCAK_INIT ,  MASK_KECCAK_INIT ,  match_opcode, 0 },
++{"keccak.ld"  ,  64, INSN_CLASS_I, "s", MATCH_KECCAK_LD   ,  MASK_KECCAK_LD   ,  match_opcode, 0 },
++{"keccak.st"  ,  64, INSN_CLASS_I, "s", MATCH_KECCAK_ST   ,  MASK_KECCAK_ST   ,  match_opcode, 0 },
++{"keccak.f1600", 64, INSN_CLASS_I, "" , MATCH_KECCAK_F1600,  MASK_KECCAK_F1600,  match_opcode, 0 },
++
+ /* RVV instructions.  */
+ {"vsetvl",     0, INSN_CLASS_V,  "d,s,t",  MATCH_VSETVL, MASK_VSETVL, match_opcode, 0},
+ {"vsetvli",    0, INSN_CLASS_V,  "d,s,Vc", MATCH_VSETVLI, MASK_VSETVLI, match_opcode, 0},

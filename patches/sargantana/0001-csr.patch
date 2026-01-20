@@ -1,0 +1,73 @@
+--- a/rtl/csr_bsc.sv
++++ b/rtl/csr_bsc.sv
+@@ -122,6 +122,9 @@ module csr_bsc#(
+     input  logic                            perf_count_ovf_int_req_i,
+     input  logic [31:3]                     perf_mhpm_ovf_bits_i,
+ 
++    output logic [63:0]                     csr_keccak_inlen_o,
++    output logic [1:0]                      csr_keccak_fsel_o,
++
+     // Debug extension
+     input logic                             debug_halt_req_i,
+     input logic                             debug_halt_ack_i,
+@@ -188,6 +191,9 @@ module csr_bsc#(
+     logic [63:0] instret_q,   instret_d;
+     logic [31:0] scountovf_q, scountovf_d;
+ 
++    logic [63:0] csr_keccak_inlen_q,     csr_keccak_inlen_d;
++    logic [63:0] csr_keccak_fsel_q,      csr_keccak_fsel_d;
++
+     riscv_pkg::dcsr_t dcsr_q, dcsr_d;
+     logic [63:0] dpc_q, dpc_d;
+     logic [63:0] dscratch0_q, dscratch0_d;
+@@ -672,6 +678,8 @@ module csr_bsc#(
+         instret_d = instret;
+         // increment the cycle count 
+         cycle_d = trunc_sum_64bits(cycle_q + {63'b0,~mcountinhibit_q[0]});
++        csr_keccak_inlen_d = csr_keccak_inlen_q;
++        csr_keccak_fsel_d = csr_keccak_fsel_q;
+         
+         scountovf_d = {perf_mhpm_ovf_bits_i, 3'b000};
+ 
+@@ -1141,6 +1149,10 @@ module csr_bsc#(
+                 riscv_pkg::CSR_PMPADDR_13:;
+                 riscv_pkg::CSR_PMPADDR_14:;
+                 riscv_pkg::CSR_PMPADDR_15:;
++
++                // KECCAK
++                riscv_pkg::CSR_KECCAK_INLEN: csr_keccak_inlen_d   = csr_wdata;
++                riscv_pkg::CSR_KECCAK_FSEL:  csr_keccak_fsel_d    = csr_wdata[2:0];
+                 default: update_access_exception = 1'b1;
+             endcase
+         end 
+@@ -1768,6 +1780,8 @@ module csr_bsc#(
+     assign reg_time_d = time_i;
+     assign debug_ebreak_o = debug_ebreak_q;
+ 
++    assign csr_keccak_inlen_o = csr_keccak_inlen_q;
++    assign csr_keccak_fsel_o = csr_keccak_fsel_q;
+ 
+     // sequential process
+     always_ff @(posedge clk_i, negedge rstn_i) begin
+@@ -1802,6 +1816,8 @@ module csr_bsc#(
+             satp_q                 <= 64'b0;
+             // timer and counters
+             cycle_q                <= 64'b0;
++            csr_keccak_inlen_q     <= 64'b0;
++            csr_keccak_fsel_q      <= 64'b0;
+             instret_q              <= 64'b0;
+             scountovf_q            <= 32'b0;
+             // aux registers
+@@ -1872,6 +1888,9 @@ module csr_bsc#(
+             // register external interrupt for timing
+             irq_q                  <= irq_i;
+ 
++            csr_keccak_inlen_q     <= csr_keccak_inlen_d;
++            csr_keccak_fsel_q     <= csr_keccak_fsel_d;
++
+             `ifdef CONF_SARGANTANA_ENABLE_PCR
+                 // PCR assigments
+                 pcr_wait_resp_q <= pcr_wait_resp_d;
+-- 
+2.50.1 (Apple Git-155)
+

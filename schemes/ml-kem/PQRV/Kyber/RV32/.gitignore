@@ -1,0 +1,4 @@
+out/
+*.ss
+help.ipynb
+vectors_*.txt
