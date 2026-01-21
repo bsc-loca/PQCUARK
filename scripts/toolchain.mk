@@ -54,8 +54,9 @@ update-binutils: checkout-toolchain-master
 	sed -i 's|https://github.com/bminor/newlib.git|https://sourceware.org/git/newlib-cygwin.git|g' .gitmodules
 	sed -i 's|https://github.com/bminor/glibc.git|https://sourceware.org/git/glibc.git|g' .gitmodules
 	sed -i 's|https://github.com/gcc-mirror/gcc.git|https://gcc.gnu.org/git/gcc.git|g' .gitmodules
-	git submodule sync -- "binutils"
-	git submodule update --init "binutils"
+	git submodule sync -- "$(BINUTILS_SUBMODULE_PATH)"
+	git submodule update --init "$(BINUTILS_SUBMODULE_PATH)"
+
 
 # -----------------------------------------------------------------------------
 # Apply opcode-only patch to toolchain binutils
@@ -108,4 +109,3 @@ clean-binutils:
 clean-toolchain:
 	@echo "Removing toolchain and generated patches"
 	rm -rf "$(TOOLCHAIN_DIR)"
-	rm -rf "$(BINUTILS_PATCH_DIR)"
