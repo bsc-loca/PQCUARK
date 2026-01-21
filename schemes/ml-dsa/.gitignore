@@ -7,3 +7,4 @@
 **/*.pcf
 **/*.row
 **/out
+.setup
