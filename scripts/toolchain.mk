@@ -50,6 +50,7 @@ checkout-toolchain-master: clone-toolchain
 # -----------------------------------------------------------------------------
 update-binutils: checkout-toolchain-master
 	cd "$(TOOLCHAIN_DIR)"
+	sed -i 's|https://github.com/bminor/binutils-gdb.git|https://sourceware.org/git/binutils-gdb.git|g' .gitmodules
 	git submodule sync -- "$(BINUTILS_SUBMODULE_PATH)"
 	git submodule update --init "$(BINUTILS_SUBMODULE_PATH)"
 
