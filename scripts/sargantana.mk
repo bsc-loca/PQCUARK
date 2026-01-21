@@ -28,6 +28,7 @@ $(SARGANTANA_CLONED):
 	git -C $(SARGANTANA_DIR)/rtl/csr apply -p1 $(PATCH_CSR)
 # Clone PQCUARK repository
 	git clone $(PQCUARK_REPO) $(SARGANTANA_DIR)/rtl/datapath/rtl/exe_stage/rtl/pqcuark
+	chmod u+x $(SARGANTANA_DIR)/scripts/run_verilator.sh
 	touch $(SARGANTANA_CLONED)
 
 .PHONY: sargantana-init
