@@ -13,6 +13,7 @@ RM = /bin/rm
 
 TEST ?=
 
+CURRENT_DIR = $(shell pwd)
 ifndef GCC 
 $(error Please set environment variable for CC toolchain compiler)
 endif
@@ -23,25 +24,25 @@ CC_OBJDUMP=$(GCC)/bin/riscv64-unknown-elf-objdump
 CC_OBJCOPY=$(GCC)/bin/riscv64-unknown-elf-objcopy
 
 
-COMMON_DIR = ./common/sargantana_standalone
-UTILS_DIR = ./utils
-OBJ_DIR = ./out/obj
-BIN_DIR = ./out/bin
-TESTS_DIR = ./tests
+COMMON_DIR = $(CURRENT_DIR)/common/sargantana_standalone
+UTILS_DIR = $(CURRENT_DIR)/utils
+OBJ_DIR = $(CURRENT_DIR)/out/obj
+BIN_DIR = $(CURRENT_DIR)/out/bin
+TESTS_DIR = $(CURRENT_DIR)/tests
 
 SRC_DIR ?=
 NTT_DIR ?= 
 KECCAK_DIR ?= 
 
-NIST_SRC_DIR = ./NIST/src
-PQRV_SRC_DIR = ./PQRV/Kyber/RV64
-PQCUARK_SRC_DIR = ./PQCUARK/src
+NIST_SRC_DIR = $(CURRENT_DIR)/NIST/src
+PQRV_SRC_DIR = $(CURRENT_DIR)/PQRV/Kyber/RV64
+PQCUARK_SRC_DIR = $(CURRENT_DIR)/PQCUARK/src
 NIST_NTT_DIR = $(NIST_SRC_DIR)
-PQRV_NTT_DIR = ./PQRV/ntt/kyber
-PQCUARK_NTT_DIR = ./PQCUARK/ntt_src
+PQRV_NTT_DIR = $(CURRENT_DIR)/PQRV/ntt/kyber
+PQCUARK_NTT_DIR = $(CURRENT_DIR)/PQCUARK/ntt_src
 NIST_KECCAK_DIR = $(NIST_SRC_DIR)
-PQRV_KECCAK_DIR = ./PQRV/sha3
-PQCUARK_KECCAK_DIR = ./PQCUARK/keccak_src
+PQRV_KECCAK_DIR = $(CURRENT_DIR)/PQRV/sha3
+PQCUARK_KECCAK_DIR = $(CURRENT_DIR)/PQCUARK/keccak_src
 
 
 ###############################################################################
