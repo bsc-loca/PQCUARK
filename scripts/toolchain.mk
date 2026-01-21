@@ -51,8 +51,11 @@ checkout-toolchain-master: clone-toolchain
 update-binutils: checkout-toolchain-master
 	cd "$(TOOLCHAIN_DIR)"
 	sed -i 's|https://github.com/bminor/binutils-gdb.git|https://sourceware.org/git/binutils-gdb.git|g' .gitmodules
-	git submodule sync -- "$(BINUTILS_SUBMODULE_PATH)"
-	git submodule update --init "$(BINUTILS_SUBMODULE_PATH)"
+	sed -i 's|https://github.com/bminor/newlib.git|https://sourceware.org/git/newlib-cygwin.git|g' .gitmodules
+	sed -i 's|https://github.com/bminor/glibc.git|https://sourceware.org/git/glibc.git|g' .gitmodules
+	sed -i 's|https://github.com/gcc-mirror/gcc.git|https://gcc.gnu.org/git/gcc.git|g' .gitmodules
+	git submodule sync -- "binutils"
+	git submodule update --init "binutils"
 
 # -----------------------------------------------------------------------------
 # Apply opcode-only patch to toolchain binutils
