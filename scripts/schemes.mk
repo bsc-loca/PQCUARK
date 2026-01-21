@@ -18,6 +18,8 @@ ML_DSA_TARGET = $(ML_DSA_TEST)_$(ML_DSA_CONF)
 ML_KEM_BIN = $(ML_KEM_DIR)/out/$(ML_KEM_TARGET)
 ML_DSA_BIN = $(ML_DSA_DIR)/out/$(ML_DSA_TARGET)
 
+SETUP_FILE = $(PROJECT_DIR)/schemes/ml-kem/.setup
+
 
 .PHONY: \
   schemes-all schemes-clean \
@@ -29,21 +31,26 @@ schemes-all: ml-kem-all ml-dsa-all
 
 schemes-clean: ml-kem-clean ml-dsa-clean
 
-ml-kem-all:
+ml-kem-all: setup
 	$(MAKE) -C $(ML_KEM_DIR) all
 
-ml-kem-bin:
+ml-kem-bin: setup
 	$(MAKE) -C $(ML_KEM_DIR) $(ML_KEM_TARGET)
 
-ml-kem-clean:
+ml-kem-clean: setup
 	$(MAKE) -C $(ML_KEM_DIR) clean
 
-ml-dsa-all:
+ml-dsa-all: setup
 	$(MAKE) -C $(ML_DSA_DIR) all
 
-ml-dsa-bin:
+ml-dsa-bin: setup
 	$(MAKE) -C $(ML_DSA_DIR) $(ML_DSA_TARGET)
 
-ml-dsa-clean:
+ml-dsa-clean: setup
 	$(MAKE) -C $(ML_DSA_DIR) clean
 
+$(SETUP_FILE):
+	source $(PROJECT_DIR)/schemes/ml-kem/set-env.sh
+	touch $(SETUP_FILE)
+
+setup: $(SETUP_FILE)
