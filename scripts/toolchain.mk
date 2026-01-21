@@ -14,9 +14,6 @@ TOOLCHAIN_DIR  := $(PROJECT_DIR)/toolchain/riscv-gnu-toolchain
 
 GCC_PQCUARK_DIR := $(PROJECT_DIR)/toolchain/gcc-pqcuark
 
-CUSTOM_BINUTILS_REPO := https://gitlab.bsc.es/post-quantum-cryptography/accelerators/pqcuark/pqc-framework/binutils.git
-CUSTOM_BINUTILS_DIR  := $(PROJECT_DIR)/toolchain/pqcuark-binutils
-
 BINUTILS_SUBMODULE_PATH := binutils
 BINUTILS_PATCH_DIR := $(PROJECT_DIR)/patches/binutils
 BINUTILS_PATCH := $(BINUTILS_PATCH_DIR)/pqcuark-riscv-opcodes.patch
