@@ -6,6 +6,7 @@ PQCUARK_REPO = https://github.com/bsc-loca/PQCUARK.git
 # Directory paths
 SARGANTANA_TILE_DIR = $(PROJECT_DIR)/external/core_tile
 SARGANTANA_DIR = $(PROJECT_DIR)/external/core_tile/rtl/core/sargantana
+SARGANTANA_CLONED = $(SARGANTANA_TILE_DIR)/.cloned
 
 # Patch files
 PATCH_DIR = $(PROJECT_DIR)/patches/sargantana
@@ -13,7 +14,7 @@ PATCH_PQCUARK = $(PATCH_DIR)/0001-pqcuark.patch
 PATCH_CSR = $(PATCH_DIR)/0001-csr.patch
 
 # Initialize Sargantana: clone repos, update submodules, and apply patches
-sargantana-init: 
+$(SARGANTANA_CLONED): 
 	mkdir -p external
 # Clone the Sargantana tile repository
 	git clone $(SARGANTANA_TILE_REPO) $(SARGANTANA_TILE_DIR) --recurse-submodules
@@ -27,6 +28,10 @@ sargantana-init:
 	git -C $(SARGANTANA_DIR)/rtl/csr apply -p1 $(PATCH_CSR)
 # Clone PQCUARK repository
 	git clone $(PQCUARK_REPO) $(SARGANTANA_DIR)/rtl/datapath/rtl/exe_stage/rtl/pqcuark
+	touch $(SARGANTANA_CLONED)
+
+.PHONY: sargantana-init
+sargantana-init: $(SARGANTANA_CLONED)
 
 # Run simulation
 core-sim:
